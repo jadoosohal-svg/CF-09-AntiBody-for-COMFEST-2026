@@ -1,26 +1,265 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #07080a;
+  --surface: #0e1013;
+  --surface-2: #15181d;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #ecedee;
+  --text-muted: #8a8f98;
+  --antibody: #3dffa8;
+  --threat: #ff4d5e;
+  --pressure: #ffb547;
+  --signal: #7c9cff;
+  --highlight: rgba(255, 255, 255, 0.04);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --text: #0d0f12;
+  --text-muted: #5b616b;
+  --antibody: #00a86b;
+  --threat: #e0283b;
+  --pressure: #c27800;
+  --signal: #3d5ce0;
+  --highlight: rgba(255, 255, 255, 0.8);
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-antibody: var(--antibody);
+  --color-threat: var(--threat);
+  --color-pressure: var(--pressure);
+  --color-signal: var(--signal);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+body {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+::selection {
+  background: color-mix(in oklab, var(--antibody) 30%, transparent);
+}
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Cards: 1px border + soft inner highlight on the top edge */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 0 var(--highlight);
+}
+
+/* Faint animated dot grid + noise */
+.dot-grid {
+  position: fixed;
+  inset: -40px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.045;
+  background-image: radial-gradient(circle at 1px 1px, var(--text) 1px, transparent 0);
+  background-size: 22px 22px;
+  animation: grid-drift 40s linear infinite;
+}
+.noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes grid-drift {
+  to {
+    transform: translate3d(22px, 22px, 0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Shimmer text */
+.shimmer {
+  background: linear-gradient(90deg, var(--text-muted) 0%, var(--text) 45%, var(--text-muted) 90%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 0%, color-mix(in oklab, var(--surface-2) 60%, var(--text) 6%) 50%, var(--surface-2) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 8px;
+}
+
+/* Border beam: a light that travels around the border */
+@property --beam-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.border-beam {
+  position: relative;
+  isolation: isolate;
+}
+.border-beam::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--beam-angle), transparent 0 70%, var(--beam, var(--antibody)) 85%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beam 3.5s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes beam {
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+/* Scan line */
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--antibody) 14%, transparent), transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--antibody) 45%, transparent);
+  animation: scan 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+@keyframes scan {
+  from {
+    transform: translateY(-70px);
+  }
+  to {
+    transform: translateY(var(--scan-h, 600px));
+  }
+}
+
+/* Typing dots */
+.dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 9999px;
+  background: var(--text-muted);
+  animation: dot 1.1s infinite ease-in-out;
+}
+.dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* SIMULATION watermark */
+.watermark {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.watermark::before {
+  content: "SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY  SIMULATION · ANTIBODY";
+  position: absolute;
+  inset: -50%;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  line-height: 64px;
+  color: var(--text);
+  opacity: 0.035;
+  transform: rotate(-24deg);
+  word-spacing: 2em;
+}
+
+.vignette-threat {
+  box-shadow: inset 0 0 80px 0 color-mix(in oklab, var(--threat) 35%, transparent);
+  animation: pulse-vig 1.6s ease-in-out infinite;
+}
+@keyframes pulse-vig {
+  50% {
+    box-shadow: inset 0 0 40px 0 color-mix(in oklab, var(--threat) 15%, transparent);
+  }
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.12s !important;
+  }
+  .dot-grid,
+  .scanline {
+    display: none;
+  }
 }
